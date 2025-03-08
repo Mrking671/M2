@@ -4,29 +4,30 @@
   <meta charset="UTF-8">
   <title>Movie Hub</title>
   <style>
-    /* Reset & Base Styles */
+    /* Reset & Base */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
     body {
-      font-family: Arial, sans-serif;
       background-color: #141414;
       color: #fff;
+      font-family: Arial, sans-serif;
       line-height: 1.6;
+      overflow-x: hidden; /* Avoid horizontal scroll on body */
     }
     /* Header */
     header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      padding: 20px 40px;
+      background-color: #141414;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 20px 40px;
-      background-color: #141414;
-      position: fixed;
-      width: 100%;
-      top: 0;
-      z-index: 100;
+      z-index: 999;
     }
     .logo {
       font-size: 24px;
@@ -34,61 +35,51 @@
     }
     .nav {
       display: flex;
-      align-items: center;
       gap: 20px;
+      align-items: center;
     }
     .nav input[type="text"] {
       padding: 5px 10px;
       border: none;
       border-radius: 4px;
     }
-
-    /* Top Rectangular Box: Trending Hindi Movies (One at a time, 16:9) */
-    .top-section {
-      margin-top: 80px; /* space for header */
-      padding: 20px 40px;
-    }
-    .top-section h2 {
-      margin-bottom: 10px;
-    }
-    .hindi-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      margin-top: 10px;
-    }
-    .hindi-btn {
-      background-color: #333;
-      color: #fff;
-      border: none;
-      padding: 10px 15px;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-    /* 16:9 aspect ratio container */
-    .hindi-movie-box {
-      width: 80vw;  /* you can adjust as desired */
-      max-width: 1200px;
-      position: relative;
-      /* aspect-ratio is supported in most modern browsers; fallback code is possible if needed */
-      aspect-ratio: 16 / 9;
+    /* Top Slideshow (16:9) */
+    .top-slideshow {
+      margin-top: 80px; /* space for fixed header */
+      width: 100vw;
+      height: calc(100vw * 9 / 16); /* 16:9 aspect ratio */
+      max-height: 600px; /* optional max-height */
       overflow: hidden;
-      border-radius: 4px;
+      position: relative;
     }
-    .hindi-movie-box img {
+    /* Slides container for horizontal scroll + snapping */
+    .slides-container {
+      display: flex;
+      height: 100%;
+      scroll-snap-type: x mandatory;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-behavior: smooth;
+      /* Hide scrollbar on some browsers */
+      -ms-overflow-style: none;  /* IE 10+ */
+      scrollbar-width: none;     /* Firefox */
+    }
+    .slides-container::-webkit-scrollbar {
+      display: none; /* Chrome/Safari */
+    }
+    /* Each slide is full viewport width */
+    .slide {
+      position: relative;
+      flex: 0 0 100%;
+      height: 100%;
+      scroll-snap-align: start;
+    }
+    .slide img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
-    .hindi-title {
-      margin-top: 10px;
-      font-size: 20px;
-      font-weight: bold;
-      text-align: center;
-    }
-
-    /* Section Layout */
+    /* Section */
     .section {
       padding: 20px 40px;
     }
@@ -97,17 +88,32 @@
     }
     .movie-carousel {
       display: flex;
+      flex-wrap: wrap; /* allow multiple rows if desired */
       gap: 10px;
-      overflow-x: auto;
-      padding-bottom: 10px;
     }
-    .movie-carousel img {
-      width: 200px;
-      height: 300px;
-      object-fit: cover;
+    .movie-item {
+      width: 150px;
+      /* Adjust poster ratio (2:3 typical) */
+      aspect-ratio: 2 / 3;
+      background-color: #333;
       border-radius: 4px;
+      overflow: hidden;
     }
-
+    .movie-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .load-more-btn {
+      margin-top: 10px;
+      padding: 8px 16px;
+      background-color: #333;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
     /* Footer */
     footer {
       padding: 20px 40px;
@@ -130,211 +136,244 @@
     </nav>
   </header>
 
-  <!-- Top Rectangular Box: Trending Hindi Movies -->
-  <section class="top-section">
-    <h2>Trending Hindi Movies</h2>
-    <div class="hindi-container">
-      <button class="hindi-btn" id="prev-hindi">Previous</button>
-      <div class="hindi-movie-box">
-        <img id="hindi-movie-img" src="" alt="Hindi Movie">
-      </div>
-      <button class="hindi-btn" id="next-hindi">Next</button>
+  <!-- Top Slideshow (Trending Hindi Movies) -->
+  <div class="top-slideshow">
+    <div class="slides-container" id="slidesContainer">
+      <!-- Slides will be inserted dynamically -->
     </div>
-    <div class="hindi-title" id="hindi-movie-title"></div>
-  </section>
+  </div>
 
-  <!-- Additional Sections -->
-  <!-- Recommended Movies -->
+  <!-- Sections -->
   <section class="section">
     <h2>Recommended Movies</h2>
     <div class="movie-carousel" id="recommended-carousel"></div>
+    <button class="load-more-btn" id="recommended-more">Load More</button>
   </section>
 
-  <!-- Popular in Action -->
   <section class="section">
     <h2>Popular in Action</h2>
     <div class="movie-carousel" id="action-carousel"></div>
+    <button class="load-more-btn" id="action-more">Load More</button>
   </section>
 
-  <!-- New Releases -->
   <section class="section">
     <h2>New Releases</h2>
     <div class="movie-carousel" id="new-carousel"></div>
+    <button class="load-more-btn" id="new-more">Load More</button>
   </section>
 
-  <!-- Bollywood (Hindi) -->
   <section class="section">
     <h2>Bollywood (Hindi)</h2>
     <div class="movie-carousel" id="bollywood-carousel"></div>
+    <button class="load-more-btn" id="bollywood-more">Load More</button>
   </section>
 
-  <!-- Hollywood (English) -->
   <section class="section">
     <h2>Hollywood (English)</h2>
     <div class="movie-carousel" id="hollywood-carousel"></div>
+    <button class="load-more-btn" id="hollywood-more">Load More</button>
   </section>
 
-  <!-- South (Telugu) -->
   <section class="section">
     <h2>South (Telugu)</h2>
     <div class="movie-carousel" id="south-carousel"></div>
+    <button class="load-more-btn" id="south-more">Load More</button>
   </section>
 
-  <!-- Punjabi -->
   <section class="section">
     <h2>Punjabi</h2>
     <div class="movie-carousel" id="punjabi-carousel"></div>
+    <button class="load-more-btn" id="punjabi-more">Load More</button>
   </section>
 
-  <!-- Footer (Mini-carousel for Additional Posters, e.g., trending) -->
+  <section class="section">
+    <h2>Anime (Japanese)</h2>
+    <div class="movie-carousel" id="anime-carousel"></div>
+    <button class="load-more-btn" id="anime-more">Load More</button>
+  </section>
+
+  <section class="section">
+    <h2>K-Drama (Korean)</h2>
+    <div class="movie-carousel" id="kdrama-carousel"></div>
+    <button class="load-more-btn" id="kdrama-more">Load More</button>
+  </section>
+
+  <section class="section">
+    <h2>Chinese Drama (Mandarin)</h2>
+    <div class="movie-carousel" id="chinese-carousel"></div>
+    <button class="load-more-btn" id="chinese-more">Load More</button>
+  </section>
+
+  <!-- Footer -->
   <footer>
-    <h3>Genres</h3>
-    <div class="movie-carousel" id="genres-carousel"></div>
+    <h3>Footer</h3>
+    <p>Additional Links or Info</p>
   </footer>
 
   <script>
     const apiKey = 'af1f708691a1a8fa6862a85e2cc240ea';
     const imageBaseUrl = 'https://image.tmdb.org/t/p/w500';
-    const fallbackImage = 'https://via.placeholder.com/500x750?text=No+Image'; // or your own fallback.jpg
+    const fallbackImage = 'https://via.placeholder.com/500x750?text=No+Image';
 
-    // Helper: Fetch data from TMDB
-    async function fetchMovies(url) {
+    // ----- TOP SLIDESHOW (Trending Hindi Movies) -----
+    // We’ll fetch multiple Hindi movies, then auto-scroll them.
+    async function loadTopSlideshow() {
+      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=hi&sort_by=popularity.desc&api_key=${apiKey}`;
       try {
-        const response = await fetch(url);
-        return await response.json();
+        const res = await fetch(url);
+        const data = await res.json();
+        const results = data.results || [];
+        const slidesContainer = document.getElementById('slidesContainer');
+
+        // Create a slide for each movie (let's limit to ~10 for performance)
+        results.slice(0, 10).forEach(movie => {
+          const slide = document.createElement('div');
+          slide.className = 'slide';
+          const img = document.createElement('img');
+          img.src = movie.backdrop_path
+            ? imageBaseUrl + movie.backdrop_path
+            : (movie.poster_path ? imageBaseUrl + movie.poster_path : fallbackImage);
+          slide.appendChild(img);
+          slidesContainer.appendChild(slide);
+        });
+
+        // Auto-scroll logic
+        let currentIndex = 0;
+        const slideCount = Math.min(results.length, 10);
+
+        setInterval(() => {
+          // Move to next slide
+          currentIndex = (currentIndex + 1) % slideCount;
+          const containerWidth = slidesContainer.clientWidth;
+          slidesContainer.scrollTo({
+            left: containerWidth * currentIndex,
+            behavior: 'smooth'
+          });
+        }, 4000); // scroll every 4 seconds
       } catch (error) {
-        console.error('Error fetching movies:', error);
-        return { results: [] };
+        console.error('Error loading top slideshow:', error);
       }
     }
 
-    // Safely build an image URL (fallback if poster not found)
-    function getImagePath(path) {
-      return path ? (imageBaseUrl + path) : fallbackImage;
-    }
+    // ----- CATEGORIES WITH LOAD MORE -----
+    // We'll track page numbers for each category to allow endless "Load More."
+    const categoryPages = {
+      recommended: 1,
+      action: 1,
+      new: 1,
+      bollywood: 1,
+      hollywood: 1,
+      south: 1,
+      punjabi: 1,
+      anime: 1,
+      kdrama: 1,
+      chinese: 1,
+    };
 
-    // Special: Trending Hindi Movies (One at a time, 16:9 box)
-    let hindiMovies = [];
-    let currentHindiIndex = 0;
+    // Generic function to load a page of movies for a given endpoint
+    async function loadCategoryMovies(url, containerId, categoryKey) {
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const results = data.results || [];
+        const container = document.getElementById(containerId);
 
-    async function loadTrendingHindiMovies() {
-      // Sorting by popularity in Hindi
-      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=hi&sort_by=popularity.desc&api_key=${apiKey}`;
-      const data = await fetchMovies(url);
-      if (data && data.results) {
-        hindiMovies = data.results;
-        showHindiMovie(currentHindiIndex);
-      }
-    }
-
-    function showHindiMovie(index) {
-      const movie = hindiMovies[index];
-      const imgEl = document.getElementById('hindi-movie-img');
-      const titleEl = document.getElementById('hindi-movie-title');
-
-      if (movie) {
-        imgEl.src = getImagePath(movie.poster_path);
-        titleEl.textContent = movie.title || 'No Title';
-      }
-    }
-
-    // Next/Prev button handlers
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('prev-hindi').addEventListener('click', () => {
-        currentHindiIndex = (currentHindiIndex - 1 + hindiMovies.length) % hindiMovies.length;
-        showHindiMovie(currentHindiIndex);
-      });
-      document.getElementById('next-hindi').addEventListener('click', () => {
-        currentHindiIndex = (currentHindiIndex + 1) % hindiMovies.length;
-        showHindiMovie(currentHindiIndex);
-      });
-    });
-
-    // Reusable function to load a set of movies into a given carousel by ID
-    async function loadCarousel(url, carouselId, sliceCount = 12) {
-      const data = await fetchMovies(url);
-      const carousel = document.getElementById(carouselId);
-      if (data && data.results) {
-        data.results.slice(0, sliceCount).forEach(movie => {
+        results.forEach(movie => {
+          const div = document.createElement('div');
+          div.className = 'movie-item';
           const img = document.createElement('img');
-          img.src = getImagePath(movie.poster_path);
+          img.src = movie.poster_path
+            ? imageBaseUrl + movie.poster_path
+            : fallbackImage;
           img.alt = movie.title || 'Movie Poster';
-          carousel.appendChild(img);
+          div.appendChild(img);
+          container.appendChild(div);
         });
+      } catch (error) {
+        console.error(`Error loading category: ${categoryKey}`, error);
       }
     }
 
-    // Load recommended (Top Rated) movies
+    // For each category, define a function that loads the next page
     function loadRecommendedMovies() {
-      const url = `https://api.themoviedb.org/3/movie/top_rated?api_key=${apiKey}`;
-      loadCarousel(url, 'recommended-carousel', 12);
+      const page = categoryPages.recommended++;
+      const url = `https://api.themoviedb.org/3/movie/top_rated?api_key=${apiKey}&page=${page}`;
+      loadCategoryMovies(url, 'recommended-carousel', 'recommended');
     }
-
-    // Load popular action movies
-    function loadPopularAction() {
-      const url = `https://api.themoviedb.org/3/discover/movie?with_genres=28&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCarousel(url, 'action-carousel', 12);
+    function loadActionMovies() {
+      const page = categoryPages.action++;
+      const url = `https://api.themoviedb.org/3/discover/movie?with_genres=28&sort_by=popularity.desc&api_key=${apiKey}&page=${page}`;
+      loadCategoryMovies(url, 'action-carousel', 'action');
     }
-
-    // Load new releases (Now Playing)
     function loadNewReleases() {
-      const url = `https://api.themoviedb.org/3/movie/now_playing?api_key=${apiKey}`;
-      loadCarousel(url, 'new-carousel', 12);
+      const page = categoryPages.new++;
+      const url = `https://api.themoviedb.org/3/movie/now_playing?api_key=${apiKey}&page=${page}`;
+      loadCategoryMovies(url, 'new-carousel', 'new');
     }
-
-    // Load Bollywood (Hindi)
     function loadBollywood() {
-      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=hi&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCarousel(url, 'bollywood-carousel', 12);
+      const page = categoryPages.bollywood++;
+      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=hi&sort_by=popularity.desc&api_key=${apiKey}&page=${page}`;
+      loadCategoryMovies(url, 'bollywood-carousel', 'bollywood');
     }
-
-    // Load Hollywood (English)
     function loadHollywood() {
-      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=en&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCarousel(url, 'hollywood-carousel', 12);
+      const page = categoryPages.hollywood++;
+      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=en&sort_by=popularity.desc&api_key=${apiKey}&page=${page}`;
+      loadCategoryMovies(url, 'hollywood-carousel', 'hollywood');
     }
-
-    // Load South (Telugu)
     function loadSouth() {
-      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=te&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCarousel(url, 'south-carousel', 12);
+      const page = categoryPages.south++;
+      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=te&sort_by=popularity.desc&api_key=${apiKey}&page=${page}`;
+      loadCategoryMovies(url, 'south-carousel', 'south');
     }
-
-    // Load Punjabi
     function loadPunjabi() {
-      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=pa&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCarousel(url, 'punjabi-carousel', 12);
+      const page = categoryPages.punjabi++;
+      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=pa&sort_by=popularity.desc&api_key=${apiKey}&page=${page}`;
+      loadCategoryMovies(url, 'punjabi-carousel', 'punjabi');
+    }
+    function loadAnime() {
+      const page = categoryPages.anime++;
+      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=ja&sort_by=popularity.desc&api_key=${apiKey}&page=${page}`;
+      loadCategoryMovies(url, 'anime-carousel', 'anime');
+    }
+    function loadKdrama() {
+      const page = categoryPages.kdrama++;
+      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=ko&sort_by=popularity.desc&api_key=${apiKey}&page=${page}`;
+      loadCategoryMovies(url, 'kdrama-carousel', 'kdrama');
+    }
+    function loadChinese() {
+      const page = categoryPages.chinese++;
+      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=zh&sort_by=popularity.desc&api_key=${apiKey}&page=${page}`;
+      loadCategoryMovies(url, 'chinese-carousel', 'chinese');
     }
 
-    // Footer "Genres" carousel: for demonstration, let's just use trending
-    async function loadFooterGenres() {
-      const url = `https://api.themoviedb.org/3/trending/movie/day?api_key=${apiKey}`;
-      const data = await fetchMovies(url);
-      const carousel = document.getElementById('genres-carousel');
-      if (data && data.results) {
-        data.results.slice(0, 6).forEach(movie => {
-          const img = document.createElement('img');
-          img.src = getImagePath(movie.poster_path);
-          img.alt = movie.title || 'Movie Poster';
-          carousel.appendChild(img);
-        });
-      }
-    }
-
-    // Initialize all sections once DOM loads
+    // ----- INIT -----
     document.addEventListener('DOMContentLoaded', () => {
-      loadTrendingHindiMovies(); // Top single item box
+      // 1) Top slideshow
+      loadTopSlideshow();
 
+      // 2) Initial load for each category
       loadRecommendedMovies();
-      loadPopularAction();
+      loadActionMovies();
       loadNewReleases();
-
       loadBollywood();
       loadHollywood();
       loadSouth();
       loadPunjabi();
+      loadAnime();
+      loadKdrama();
+      loadChinese();
 
-      loadFooterGenres();
+      // 3) "Load More" buttons
+      document.getElementById('recommended-more').addEventListener('click', loadRecommendedMovies);
+      document.getElementById('action-more').addEventListener('click', loadActionMovies);
+      document.getElementById('new-more').addEventListener('click', loadNewReleases);
+      document.getElementById('bollywood-more').addEventListener('click', loadBollywood);
+      document.getElementById('hollywood-more').addEventListener('click', loadHollywood);
+      document.getElementById('south-more').addEventListener('click', loadSouth);
+      document.getElementById('punjabi-more').addEventListener('click', loadPunjabi);
+      document.getElementById('anime-more').addEventListener('click', loadAnime);
+      document.getElementById('kdrama-more').addEventListener('click', loadKdrama);
+      document.getElementById('chinese-more').addEventListener('click', loadChinese);
     });
   </script>
 </body>
