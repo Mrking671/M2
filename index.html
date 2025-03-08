@@ -2,23 +2,84 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Trending Movies</title>
+  <title>Movie Hub</title>
   <style>
+    /* Reset & Base Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     body {
+      font-family: Arial, sans-serif;
       background-color: #141414;
       color: #fff;
-      font-family: Arial, sans-serif;
-      padding: 20px;
+      line-height: 1.6;
     }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      background-color: #141414;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 100;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .nav input[type="text"] {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+    }
+    /* Banner Section (Trending Movie) */
+    .banner {
+      position: relative;
+      margin-top: 80px; /* Space for header */
+    }
+    .banner img {
+      width: 100%;
+      height: 400px;
+      object-fit: cover;
+    }
+    .banner-info {
+      position: absolute;
+      bottom: 20px;
+      left: 40px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 10px 20px;
+      border-radius: 4px;
+      max-width: 60%;
+    }
+    .banner-info h1 {
+      font-size: 32px;
+      margin-bottom: 5px;
+    }
+    .banner-info p {
+      font-size: 16px;
+    }
+    /* Section Layout */
+    .section {
+      padding: 20px 40px;
+    }
+    .section h2 {
+      margin-bottom: 10px;
     }
     .movie-carousel {
       display: flex;
       gap: 10px;
       overflow-x: auto;
-      padding: 10px;
+      padding-bottom: 10px;
     }
     .movie-carousel img {
       width: 200px;
@@ -26,45 +87,172 @@
       object-fit: cover;
       border-radius: 4px;
     }
+    /* Footer */
+    footer {
+      padding: 20px 40px;
+      background-color: #141414;
+      border-top: 1px solid #333;
+      text-align: center;
+    }
+    footer h3 {
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
-  <h1>Trending Movies</h1>
-  <div class="movie-carousel" id="trending-carousel">
-    <!-- Trending movie posters will appear here -->
+  <!-- Header -->
+  <header>
+    <div class="logo">Movie Hub</div>
+    <nav class="nav">
+      <input id="search-input" type="text" placeholder="Search">
+      <div class="profile">Profile</div>
+    </nav>
+  </header>
+
+  <!-- Banner with Trending Movie (Large Movie Banner) -->
+  <div class="banner">
+    <!-- The banner image will be replaced by the trending movie's backdrop -->
+    <img id="banner-image" src="" alt="Large Movie Banner">
+    <div class="banner-info">
+      <h1 id="banner-title">Trending Movie Title</h1>
+      <p id="banner-overview">Brief info about the movie goes here.</p>
+    </div>
   </div>
 
+  <!-- Additional Sections -->
+  <!-- Recommended Movies -->
+  <section class="section">
+    <h2>Recommended Movies</h2>
+    <div class="movie-carousel" id="recommended-carousel">
+      <!-- Recommended movie posters will be appended here -->
+    </div>
+  </section>
+
+  <!-- Popular in Action -->
+  <section class="section">
+    <h2>Popular in Action</h2>
+    <div class="movie-carousel" id="action-carousel">
+      <!-- Action movie posters will be appended here -->
+    </div>
+  </section>
+
+  <!-- New Releases -->
+  <section class="section">
+    <h2>New Releases</h2>
+    <div class="movie-carousel" id="new-carousel">
+      <!-- New release movie posters will be appended here -->
+    </div>
+  </section>
+
+  <!-- Footer (Mini-carousel for Genres or Additional Links) -->
+  <footer>
+    <h3>Genres</h3>
+    <div class="movie-carousel" id="genres-carousel">
+      <!-- For example purposes, using trending movie posters as placeholders -->
+    </div>
+  </footer>
+
   <script>
-    const apiKey = 'af1f708691a1a8fa6862a85e2cc240ea'; // Your TMDB API key
+    const apiKey = 'af1f708691a1a8fa6862a85e2cc240ea';
     const imageBaseUrl = 'https://image.tmdb.org/t/p/w500';
 
-    async function fetchTrendingMovies() {
-      const url = `https://api.themoviedb.org/3/trending/movie/day?api_key=${apiKey}`;
+    // Helper: Fetch data from TMDB endpoint
+    async function fetchMovies(url) {
       try {
         const response = await fetch(url);
-        const data = await response.json();
-        return data.results;
+        return await response.json();
       } catch (error) {
-        console.error('Error fetching trending movies:', error);
-        return [];
+        console.error('Error fetching movies:', error);
+        return { results: [] };
       }
     }
 
-    async function displayTrendingMovies() {
-      const movies = await fetchTrendingMovies();
-      const carousel = document.getElementById('trending-carousel');
-      movies.forEach(movie => {
-        if (movie.poster_path) {
-          const img = document.createElement('img');
-          img.src = imageBaseUrl + movie.poster_path;
-          img.alt = movie.title;
-          carousel.appendChild(img);
+    // Load Trending Movies for the Banner (using the first trending movie)
+    async function loadTrendingMovie() {
+      const url = `https://api.themoviedb.org/3/trending/movie/day?api_key=${apiKey}`;
+      const data = await fetchMovies(url);
+      if (data && data.results && data.results.length > 0) {
+        const movie = data.results[0];
+        if (movie.backdrop_path) {
+          document.getElementById('banner-image').src = imageBaseUrl + movie.backdrop_path;
+        } else if (movie.poster_path) {
+          // Fallback if backdrop isn't available
+          document.getElementById('banner-image').src = imageBaseUrl + movie.poster_path;
         }
-      });
+        document.getElementById('banner-title').textContent = movie.title;
+        document.getElementById('banner-overview').textContent = movie.overview;
+        
+        // Also use some trending posters for the footer genres carousel (example)
+        const genresCarousel = document.getElementById('genres-carousel');
+        data.results.slice(0, 6).forEach(movie => {
+          if (movie.poster_path) {
+            const img = document.createElement('img');
+            img.src = imageBaseUrl + movie.poster_path;
+            img.alt = movie.title;
+            genresCarousel.appendChild(img);
+          }
+        });
+      }
     }
 
-    // Load trending movies when the page loads
-    document.addEventListener('DOMContentLoaded', displayTrendingMovies);
+    // Load Recommended Movies (Using Top Rated movies as an example)
+    async function loadRecommendedMovies() {
+      const url = `https://api.themoviedb.org/3/movie/top_rated?api_key=${apiKey}`;
+      const data = await fetchMovies(url);
+      const carousel = document.getElementById('recommended-carousel');
+      if (data && data.results) {
+        data.results.slice(0, 6).forEach(movie => {
+          if (movie.poster_path) {
+            const img = document.createElement('img');
+            img.src = imageBaseUrl + movie.poster_path;
+            img.alt = movie.title;
+            carousel.appendChild(img);
+          }
+        });
+      }
+    }
+
+    // Load Popular Action Movies (Using Discover with genre ID 28 for Action)
+    async function loadPopularAction() {
+      const url = `https://api.themoviedb.org/3/discover/movie?with_genres=28&sort_by=popularity.desc&api_key=${apiKey}`;
+      const data = await fetchMovies(url);
+      const carousel = document.getElementById('action-carousel');
+      if (data && data.results) {
+        data.results.slice(0, 6).forEach(movie => {
+          if (movie.poster_path) {
+            const img = document.createElement('img');
+            img.src = imageBaseUrl + movie.poster_path;
+            img.alt = movie.title;
+            carousel.appendChild(img);
+          }
+        });
+      }
+    }
+
+    // Load New Releases (Using Now Playing endpoint)
+    async function loadNewReleases() {
+      const url = `https://api.themoviedb.org/3/movie/now_playing?api_key=${apiKey}`;
+      const data = await fetchMovies(url);
+      const carousel = document.getElementById('new-carousel');
+      if (data && data.results) {
+        data.results.slice(0, 6).forEach(movie => {
+          if (movie.poster_path) {
+            const img = document.createElement('img');
+            img.src = imageBaseUrl + movie.poster_path;
+            img.alt = movie.title;
+            carousel.appendChild(img);
+          }
+        });
+      }
+    }
+
+    // Initialize all sections after DOM loads
+    document.addEventListener('DOMContentLoaded', () => {
+      loadTrendingMovie();
+      loadRecommendedMovies();
+      loadPopularAction();
+      loadNewReleases();
+    });
   </script>
 </body>
 </html>
