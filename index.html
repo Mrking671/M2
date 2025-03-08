@@ -250,7 +250,7 @@
   <header>
     <div class="header-content">
       <div class="header-title">Movie Hub</div>
-      <!-- Magnifying glass icon (inline SVG, not an emoji) -->
+      <!-- Magnifying glass icon (inline SVG) -->
       <div class="search-icon" id="searchIcon">
         <svg viewBox="0 0 24 24">
           <path d="M21.71 20.29l-3.4-3.4a8.49 8.49 0 001.89-5.39 8.5 8.5 0 10-8.5 8.5 8.49 8.49 0 005.39-1.89l3.4 3.4a1 1 0 001.42-1.42zM10.5 17a6.5 6.5 0 116.5-6.5 6.51 6.51 0 01-6.5 6.5z"></path>
@@ -348,25 +348,48 @@
     const imageBaseUrl = 'https://image.tmdb.org/t/p/w500';
     const fallbackImage = 'https://via.placeholder.com/500x750?text=No+Image';
 
-    /* ------------- TOP SLIDESHOW (Hindi Movies) ------------- */
+    // Helper to handle image loading errors.
+    // 1st fail => re-attempt load once
+    // 2nd fail => fallback
+    function handleImageError(imgEl, originalSrc) {
+      console.warn('Image failed to load:', originalSrc);
+      if (!imgEl.dataset.retry) {
+        // First time error: retry once
+        imgEl.dataset.retry = 'true';
+        setTimeout(() => {
+          console.log('Retrying image load:', originalSrc);
+          imgEl.src = originalSrc;
+        }, 500);
+      } else {
+        // Second time error: fallback
+        console.log('Second fail, switching to fallback image');
+        imgEl.src = fallbackImage;
+      }
+    }
+
+    // ------------- TOP SLIDESHOW (Hindi Movies) -------------
     let topSlides = [];
     let currentSlideIndex = 0;
 
     async function loadTopSlideshow() {
       const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=hi&sort_by=popularity.desc&api_key=${apiKey}`;
       try {
+        console.log('Fetching top slideshow (Hindi movies)...');
         const response = await fetch(url);
         const data = await response.json();
         topSlides = data.results.slice(0, 10); // up to 10 slides
+        console.log('Fetched slideshow movies:', topSlides);
         const slidesContainer = document.getElementById('slidesContainer');
 
         topSlides.forEach(movie => {
           const slide = document.createElement('div');
           slide.className = 'slide';
           const img = document.createElement('img');
-          img.src = movie.backdrop_path
+          let src = movie.backdrop_path
             ? (imageBaseUrl + movie.backdrop_path)
             : (movie.poster_path ? (imageBaseUrl + movie.poster_path) : fallbackImage);
+          img.src = src;
+          img.onerror = () => handleImageError(img, src);
           slide.appendChild(img);
           slidesContainer.appendChild(slide);
         });
@@ -376,9 +399,11 @@
 
         // Auto-scroll every 4 seconds
         setInterval(() => {
-          currentSlideIndex = (currentSlideIndex + 1) % topSlides.length;
-          scrollToSlide(currentSlideIndex);
-          updateTopMovieTitle(currentSlideIndex);
+          if (topSlides.length > 0) {
+            currentSlideIndex = (currentSlideIndex + 1) % topSlides.length;
+            scrollToSlide(currentSlideIndex);
+            updateTopMovieTitle(currentSlideIndex);
+          }
         }, 4000);
       } catch (error) {
         console.error('Error loading top slideshow:', error);
@@ -400,7 +425,7 @@
       topMovieTitleEl.textContent = movie ? (movie.title || 'No Title') : '';
     }
 
-    /* ------------- ENDLESS CATEGORIES (LOAD MORE) ------------- */
+    // ------------- ENDLESS CATEGORIES (LOAD MORE) -------------
     const categoryPages = {
       recommended: 1,
       action: 1,
@@ -416,18 +441,22 @@
 
     async function loadCategory(pageKey, url, containerId) {
       try {
+        console.log(`Loading category: ${pageKey}, page: ${categoryPages[pageKey]}`);
         const response = await fetch(url + '&page=' + categoryPages[pageKey]);
         const data = await response.json();
         const results = data.results || [];
+        console.log(`Fetched ${results.length} results for category: ${pageKey}`);
         const container = document.getElementById(containerId);
 
         results.forEach(movie => {
           const item = document.createElement('div');
           item.className = 'movie-item';
           const img = document.createElement('img');
-          img.src = movie.poster_path
+          const src = movie.poster_path
             ? (imageBaseUrl + movie.poster_path)
             : fallbackImage;
+          img.src = src;
+          img.onerror = () => handleImageError(img, src);
           img.alt = movie.title || 'Movie Poster';
           item.appendChild(img);
           container.appendChild(item);
@@ -498,7 +527,7 @@
       categoryPages[pageKey]++;
     }
 
-    /* ------------- SEARCH OVERLAY ------------- */
+    // ------------- SEARCH OVERLAY -------------
     const searchOverlay = document.getElementById('searchOverlay');
     const searchIcon = document.getElementById('searchIcon');
     const searchCloseBtn = document.getElementById('searchCloseBtn');
@@ -508,6 +537,7 @@
 
     // Show overlay & load trending movies initially
     async function openSearchOverlay() {
+      console.log('Opening search overlay...');
       searchOverlay.style.display = 'flex';
       searchInput.value = ''; // clear any old query
       searchResults.innerHTML = '';
@@ -516,6 +546,7 @@
 
     // Hide overlay
     function closeSearchOverlay() {
+      console.log('Closing search overlay...');
       searchOverlay.style.display = 'none';
     }
 
@@ -523,9 +554,11 @@
     async function loadTrendingInSearch() {
       const url = `https://api.themoviedb.org/3/trending/movie/day?api_key=${apiKey}`;
       try {
+        console.log('Loading trending movies for search overlay...');
         const res = await fetch(url);
         const data = await res.json();
         const results = data.results || [];
+        console.log('Trending search results:', results);
         renderSearchResults(results);
       } catch (error) {
         console.error('Error loading trending for search:', error);
@@ -536,9 +569,11 @@
     async function searchMovies(query) {
       const url = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}`;
       try {
+        console.log('Searching for:', query);
         const res = await fetch(url);
         const data = await res.json();
         const results = data.results || [];
+        console.log(`Search results for "${query}":`, results);
         renderSearchResults(results);
       } catch (error) {
         console.error('Error searching movies:', error);
@@ -547,11 +582,22 @@
 
     function renderSearchResults(results) {
       searchResults.innerHTML = '';
+      if (!results.length) {
+        // If no results, show a message
+        const msg = document.createElement('p');
+        msg.textContent = 'No movies found.';
+        searchResults.appendChild(msg);
+        return;
+      }
       results.forEach(movie => {
         const div = document.createElement('div');
         div.className = 'search-item';
         const img = document.createElement('img');
-        img.src = movie.poster_path ? (imageBaseUrl + movie.poster_path) : fallbackImage;
+        const src = movie.poster_path
+          ? (imageBaseUrl + movie.poster_path)
+          : fallbackImage;
+        img.src = src;
+        img.onerror = () => handleImageError(img, src);
         const title = document.createElement('div');
         title.className = 'search-item-title';
         title.textContent = movie.title || 'No Title';
