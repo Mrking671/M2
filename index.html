@@ -135,6 +135,7 @@
       border-radius: 4px;
       overflow: hidden;
       flex: 0 0 auto; /* do not shrink, do not expand */
+      position: relative;
     }
     .movie-item img {
       width: 100%;
@@ -143,16 +144,20 @@
       display: block;
     }
 
-    /* Load More button */
-    .load-more-btn {
-      margin-top: 10px;
-      padding: 8px 16px;
-      background-color: #333;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
+    /* "Load More" tile styling */
+    .load-more-tile {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #444;
       cursor: pointer;
-      font-size: 1rem;
+      font-size: 1.2rem;
+      color: #fff;
+      font-weight: bold;
+    }
+    .load-more-tile::before {
+      content: "+";
+      font-size: 2rem;
     }
 
     /* Footer */
@@ -266,65 +271,55 @@
   <!-- Show the name of the currently visible movie below the rectangular box -->
   <div class="top-movie-title" id="topMovieTitle"></div>
 
-  <!-- Categories stacked vertically, each horizontally scrollable + Load More -->
+  <!-- Categories stacked vertically, each horizontally scrollable -->
   <section class="section">
     <h2>Recommended Movies</h2>
     <div class="movie-carousel" id="recommended-carousel"></div>
-    <button class="load-more-btn" id="recommended-more">Load More</button>
   </section>
 
   <section class="section">
     <h2>Popular in Action</h2>
     <div class="movie-carousel" id="action-carousel"></div>
-    <button class="load-more-btn" id="action-more">Load More</button>
   </section>
 
   <section class="section">
     <h2>New Releases</h2>
     <div class="movie-carousel" id="new-carousel"></div>
-    <button class="load-more-btn" id="new-more">Load More</button>
   </section>
 
   <section class="section">
     <h2>Bollywood (Hindi)</h2>
     <div class="movie-carousel" id="bollywood-carousel"></div>
-    <button class="load-more-btn" id="bollywood-more">Load More</button>
   </section>
 
   <section class="section">
     <h2>Hollywood (English)</h2>
     <div class="movie-carousel" id="hollywood-carousel"></div>
-    <button class="load-more-btn" id="hollywood-more">Load More</button>
   </section>
 
   <section class="section">
     <h2>South (Telugu)</h2>
     <div class="movie-carousel" id="south-carousel"></div>
-    <button class="load-more-btn" id="south-more">Load More</button>
   </section>
 
   <section class="section">
     <h2>Punjabi</h2>
     <div class="movie-carousel" id="punjabi-carousel"></div>
-    <button class="load-more-btn" id="punjabi-more">Load More</button>
   </section>
 
   <section class="section">
     <h2>Anime (Japanese)</h2>
     <div class="movie-carousel" id="anime-carousel"></div>
-    <button class="load-more-btn" id="anime-more">Load More</button>
   </section>
 
   <section class="section">
     <h2>K-Drama (Korean)</h2>
     <div class="movie-carousel" id="kdrama-carousel"></div>
-    <button class="load-more-btn" id="kdrama-more">Load More</button>
   </section>
 
   <section class="section">
     <h2>Chinese Drama (Mandarin)</h2>
     <div class="movie-carousel" id="chinese-carousel"></div>
-    <button class="load-more-btn" id="chinese-more">Load More</button>
   </section>
 
   <!-- Footer -->
@@ -348,21 +343,16 @@
     const imageBaseUrl = 'https://image.tmdb.org/t/p/w500';
     const fallbackImage = 'https://via.placeholder.com/500x750?text=No+Image';
 
-    // Helper to handle image loading errors.
-    // 1st fail => re-attempt load once
-    // 2nd fail => fallback
+    // Helper to handle image loading errors (retry once, then fallback)
     function handleImageError(imgEl, originalSrc) {
-      console.warn('Image failed to load:', originalSrc);
       if (!imgEl.dataset.retry) {
         // First time error: retry once
         imgEl.dataset.retry = 'true';
         setTimeout(() => {
-          console.log('Retrying image load:', originalSrc);
           imgEl.src = originalSrc;
         }, 500);
       } else {
         // Second time error: fallback
-        console.log('Second fail, switching to fallback image');
         imgEl.src = fallbackImage;
       }
     }
@@ -374,11 +364,9 @@
     async function loadTopSlideshow() {
       const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=hi&sort_by=popularity.desc&api_key=${apiKey}`;
       try {
-        console.log('Fetching top slideshow (Hindi movies)...');
         const response = await fetch(url);
         const data = await response.json();
         topSlides = data.results.slice(0, 10); // up to 10 slides
-        console.log('Fetched slideshow movies:', topSlides);
         const slidesContainer = document.getElementById('slidesContainer');
 
         topSlides.forEach(movie => {
@@ -425,7 +413,7 @@
       topMovieTitleEl.textContent = movie ? (movie.title || 'No Title') : '';
     }
 
-    // ------------- ENDLESS CATEGORIES (LOAD MORE) -------------
+    // ------------- ENDLESS CATEGORIES WITH A "LOAD MORE" TILE -------------
     const categoryPages = {
       recommended: 1,
       action: 1,
@@ -439,14 +427,22 @@
       chinese: 1,
     };
 
+    // Generic function to load one "page" of a category
     async function loadCategory(pageKey, url, containerId) {
+      const container = document.getElementById(containerId);
+
+      // Remove any existing Load More tile so we don't stack them
+      const oldLoadMore = container.querySelector('.load-more-tile');
+      if (oldLoadMore) {
+        container.removeChild(oldLoadMore);
+      }
+
+      // Fetch new data
       try {
-        console.log(`Loading category: ${pageKey}, page: ${categoryPages[pageKey]}`);
-        const response = await fetch(url + '&page=' + categoryPages[pageKey]);
+        const fetchUrl = url + '&page=' + categoryPages[pageKey];
+        const response = await fetch(fetchUrl);
         const data = await response.json();
         const results = data.results || [];
-        console.log(`Fetched ${results.length} results for category: ${pageKey}`);
-        const container = document.getElementById(containerId);
 
         results.forEach(movie => {
           const item = document.createElement('div');
@@ -461,70 +457,53 @@
           item.appendChild(img);
           container.appendChild(item);
         });
+
+        // Increase page for next time
+        categoryPages[pageKey]++;
+
+        // Append a new "Load More" tile at the end
+        const loadMoreTile = document.createElement('div');
+        loadMoreTile.className = 'movie-item load-more-tile';
+        loadMoreTile.onclick = () => {
+          // On click, load the next page
+          loadCategory(pageKey, url, containerId);
+        };
+        container.appendChild(loadMoreTile);
       } catch (error) {
         console.error(`Error loading category for ${pageKey}:`, error);
       }
     }
 
-    function loadRecommendedMovies() {
-      const pageKey = 'recommended';
-      const url = `https://api.themoviedb.org/3/movie/top_rated?api_key=${apiKey}`;
-      loadCategory(pageKey, url, 'recommended-carousel');
-      categoryPages[pageKey]++;
+    // Functions to initialize each category (first load)
+    function initRecommended() {
+      loadCategory('recommended', `https://api.themoviedb.org/3/movie/top_rated?api_key=${apiKey}`, 'recommended-carousel');
     }
-    function loadActionMovies() {
-      const pageKey = 'action';
-      const url = `https://api.themoviedb.org/3/discover/movie?with_genres=28&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCategory(pageKey, url, 'action-carousel');
-      categoryPages[pageKey]++;
+    function initAction() {
+      loadCategory('action', `https://api.themoviedb.org/3/discover/movie?with_genres=28&sort_by=popularity.desc&api_key=${apiKey}`, 'action-carousel');
     }
-    function loadNewReleases() {
-      const pageKey = 'new';
-      const url = `https://api.themoviedb.org/3/movie/now_playing?api_key=${apiKey}`;
-      loadCategory(pageKey, url, 'new-carousel');
-      categoryPages[pageKey]++;
+    function initNew() {
+      loadCategory('new', `https://api.themoviedb.org/3/movie/now_playing?api_key=${apiKey}`, 'new-carousel');
     }
-    function loadBollywood() {
-      const pageKey = 'bollywood';
-      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=hi&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCategory(pageKey, url, 'bollywood-carousel');
-      categoryPages[pageKey]++;
+    function initBollywood() {
+      loadCategory('bollywood', `https://api.themoviedb.org/3/discover/movie?with_original_language=hi&sort_by=popularity.desc&api_key=${apiKey}`, 'bollywood-carousel');
     }
-    function loadHollywood() {
-      const pageKey = 'hollywood';
-      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=en&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCategory(pageKey, url, 'hollywood-carousel');
-      categoryPages[pageKey]++;
+    function initHollywood() {
+      loadCategory('hollywood', `https://api.themoviedb.org/3/discover/movie?with_original_language=en&sort_by=popularity.desc&api_key=${apiKey}`, 'hollywood-carousel');
     }
-    function loadSouth() {
-      const pageKey = 'south';
-      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=te&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCategory(pageKey, url, 'south-carousel');
-      categoryPages[pageKey]++;
+    function initSouth() {
+      loadCategory('south', `https://api.themoviedb.org/3/discover/movie?with_original_language=te&sort_by=popularity.desc&api_key=${apiKey}`, 'south-carousel');
     }
-    function loadPunjabi() {
-      const pageKey = 'punjabi';
-      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=pa&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCategory(pageKey, url, 'punjabi-carousel');
-      categoryPages[pageKey]++;
+    function initPunjabi() {
+      loadCategory('punjabi', `https://api.themoviedb.org/3/discover/movie?with_original_language=pa&sort_by=popularity.desc&api_key=${apiKey}`, 'punjabi-carousel');
     }
-    function loadAnime() {
-      const pageKey = 'anime';
-      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=ja&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCategory(pageKey, url, 'anime-carousel');
-      categoryPages[pageKey]++;
+    function initAnime() {
+      loadCategory('anime', `https://api.themoviedb.org/3/discover/movie?with_original_language=ja&sort_by=popularity.desc&api_key=${apiKey}`, 'anime-carousel');
     }
-    function loadKdrama() {
-      const pageKey = 'kdrama';
-      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=ko&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCategory(pageKey, url, 'kdrama-carousel');
-      categoryPages[pageKey]++;
+    function initKdrama() {
+      loadCategory('kdrama', `https://api.themoviedb.org/3/discover/movie?with_original_language=ko&sort_by=popularity.desc&api_key=${apiKey}`, 'kdrama-carousel');
     }
-    function loadChinese() {
-      const pageKey = 'chinese';
-      const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=zh&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCategory(pageKey, url, 'chinese-carousel');
-      categoryPages[pageKey]++;
+    function initChinese() {
+      loadCategory('chinese', `https://api.themoviedb.org/3/discover/movie?with_original_language=zh&sort_by=popularity.desc&api_key=${apiKey}`, 'chinese-carousel');
     }
 
     // ------------- SEARCH OVERLAY -------------
@@ -537,49 +516,39 @@
 
     // Show overlay & load trending movies initially
     async function openSearchOverlay() {
-      console.log('Opening search overlay...');
       searchOverlay.style.display = 'flex';
       searchInput.value = ''; // clear any old query
       searchResults.innerHTML = '';
       await loadTrendingInSearch();
     }
-
     // Hide overlay
     function closeSearchOverlay() {
-      console.log('Closing search overlay...');
       searchOverlay.style.display = 'none';
     }
-
     // Load trending movies if no search query
     async function loadTrendingInSearch() {
       const url = `https://api.themoviedb.org/3/trending/movie/day?api_key=${apiKey}`;
       try {
-        console.log('Loading trending movies for search overlay...');
         const res = await fetch(url);
         const data = await res.json();
         const results = data.results || [];
-        console.log('Trending search results:', results);
         renderSearchResults(results);
       } catch (error) {
         console.error('Error loading trending for search:', error);
       }
     }
-
     // Perform a search
     async function searchMovies(query) {
       const url = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}`;
       try {
-        console.log('Searching for:', query);
         const res = await fetch(url);
         const data = await res.json();
         const results = data.results || [];
-        console.log(`Search results for "${query}":`, results);
         renderSearchResults(results);
       } catch (error) {
         console.error('Error searching movies:', error);
       }
     }
-
     function renderSearchResults(results) {
       searchResults.innerHTML = '';
       if (!results.length) {
@@ -613,28 +582,16 @@
       loadTopSlideshow();
 
       // Initial load for categories
-      loadRecommendedMovies();
-      loadActionMovies();
-      loadNewReleases();
-      loadBollywood();
-      loadHollywood();
-      loadSouth();
-      loadPunjabi();
-      loadAnime();
-      loadKdrama();
-      loadChinese();
-
-      // Load More buttons
-      document.getElementById('recommended-more').addEventListener('click', loadRecommendedMovies);
-      document.getElementById('action-more').addEventListener('click', loadActionMovies);
-      document.getElementById('new-more').addEventListener('click', loadNewReleases);
-      document.getElementById('bollywood-more').addEventListener('click', loadBollywood);
-      document.getElementById('hollywood-more').addEventListener('click', loadHollywood);
-      document.getElementById('south-more').addEventListener('click', loadSouth);
-      document.getElementById('punjabi-more').addEventListener('click', loadPunjabi);
-      document.getElementById('anime-more').addEventListener('click', loadAnime);
-      document.getElementById('kdrama-more').addEventListener('click', loadKdrama);
-      document.getElementById('chinese-more').addEventListener('click', loadChinese);
+      initRecommended();
+      initAction();
+      initNew();
+      initBollywood();
+      initHollywood();
+      initSouth();
+      initPunjabi();
+      initAnime();
+      initKdrama();
+      initChinese();
 
       // Search overlay open/close
       searchIcon.addEventListener('click', openSearchOverlay);
@@ -650,7 +607,6 @@
           loadTrendingInSearch();
         }
       });
-
       // On pressing Enter in the input
       searchInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
