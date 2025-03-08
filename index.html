@@ -15,7 +15,7 @@
       color: #fff;
       font-family: Arial, sans-serif;
       line-height: 1.6;
-      overflow-x: hidden; /* Prevent horizontal body scroll */
+      overflow-x: hidden; /* Prevent horizontal scroll on body */
     }
 
     /* Header */
@@ -23,35 +23,45 @@
       position: fixed;
       top: 0;
       width: 100%;
-      height: 60px;
+      height: 70px;
       background-color: #141414;
       display: flex;
-      justify-content: center;  /* center the title */
+      justify-content: center; /* center the title horizontally */
       align-items: center;
       z-index: 999;
+      padding: 0 20px;
     }
     .header-content {
       width: 100%;
       max-width: 1200px;
       display: flex;
-      justify-content: center;  /* center the text inside the container */
+      justify-content: center;
       align-items: center;
       position: relative;
     }
     .header-title {
-      font-size: 1.5rem; /* bigger text */
+      font-size: 2rem; /* bigger text for Movie Hub */
       font-weight: bold;
     }
     .search-icon {
       position: absolute;
       right: 0;
       cursor: pointer;
-      font-size: 1.5rem; /* bigger icon */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+    }
+    .search-icon svg {
+      width: 24px;
+      height: 24px;
+      fill: #fff;
     }
 
     /* Top Slideshow (16:9) */
     .top-slideshow {
-      margin-top: 60px; /* space for fixed header */
+      margin-top: 70px; /* space for fixed header */
       width: 100vw;
       height: calc(100vw * 9 / 16); /* 16:9 aspect ratio */
       max-height: 600px; /* optional max-height */
@@ -85,21 +95,21 @@
     /* Movie title below the rectangular box */
     .top-movie-title {
       text-align: center;
-      font-size: 1.25rem;
+      font-size: 1.3rem;
       margin: 10px 0;
     }
 
     /* Section Layout */
     .section {
-      padding: 20px 20px;
+      padding: 20px;
       max-width: 1200px;
       margin: 0 auto;
     }
     .section h2 {
       margin-bottom: 10px;
-      font-size: 1.4rem; /* bigger text */
+      font-size: 1.4rem;
     }
-    /* Horizontal manual scroll, one line per category */
+    /* Horizontal manual scroll, each category stacked vertically */
     .movie-carousel {
       display: flex;
       gap: 10px;
@@ -107,7 +117,7 @@
       overflow-y: hidden;
       scroll-behavior: smooth;
       -ms-overflow-style: none;  /* IE 10+ */
-      scrollbar-width: thin;     /* Firefox: you can show a thin scrollbar if you like */
+      scrollbar-width: thin;     /* Firefox: show a thin scrollbar if you like */
     }
     .movie-carousel::-webkit-scrollbar {
       height: 6px;
@@ -119,19 +129,30 @@
 
     /* Larger posters */
     .movie-item {
-      width: 250px;   /* bigger poster width */
+      width: 250px; /* bigger poster width */
       aspect-ratio: 2 / 3;
       background-color: #333;
       border-radius: 4px;
       overflow: hidden;
       flex: 0 0 auto; /* do not shrink, do not expand */
-      text-align: center;
     }
     .movie-item img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
+    }
+
+    /* Load More button */
+    .load-more-btn {
+      margin-top: 10px;
+      padding: 8px 16px;
+      background-color: #333;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
     }
 
     /* Footer */
@@ -146,6 +167,82 @@
       margin-bottom: 10px;
       font-size: 1.25rem;
     }
+
+    /* Search Overlay */
+    #searchOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0,0,0,0.8);
+      display: none; /* hidden by default */
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 80px 20px; /* space from top + some side padding */
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .search-close-btn {
+      background: #333;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 1rem;
+      align-self: flex-end;
+      margin-bottom: 10px;
+    }
+    .search-input-container {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      margin-bottom: 20px;
+    }
+    .search-input-container input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 4px 0 0 4px;
+      font-size: 1rem;
+    }
+    .search-input-container button {
+      background-color: #333;
+      color: #fff;
+      border: none;
+      padding: 0 20px;
+      border-radius: 0 4px 4px 0;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    #searchResults {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      width: 100%;
+      max-width: 900px;
+      justify-content: center;
+    }
+    .search-item {
+      width: 150px;
+      aspect-ratio: 2 / 3;
+      background-color: #333;
+      border-radius: 4px;
+      overflow: hidden;
+      text-align: center;
+    }
+    .search-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .search-item-title {
+      font-size: 0.9rem;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
@@ -153,7 +250,12 @@
   <header>
     <div class="header-content">
       <div class="header-title">Movie Hub</div>
-      <div class="search-icon" id="searchIcon">🔍</div>
+      <!-- Magnifying glass icon (inline SVG, not an emoji) -->
+      <div class="search-icon" id="searchIcon">
+        <svg viewBox="0 0 24 24">
+          <path d="M21.71 20.29l-3.4-3.4a8.49 8.49 0 001.89-5.39 8.5 8.5 0 10-8.5 8.5 8.49 8.49 0 005.39-1.89l3.4 3.4a1 1 0 001.42-1.42zM10.5 17a6.5 6.5 0 116.5-6.5 6.51 6.51 0 01-6.5 6.5z"></path>
+        </svg>
+      </div>
     </div>
   </header>
 
@@ -164,55 +266,65 @@
   <!-- Show the name of the currently visible movie below the rectangular box -->
   <div class="top-movie-title" id="topMovieTitle"></div>
 
-  <!-- Categories stacked vertically, each horizontally scrollable -->
+  <!-- Categories stacked vertically, each horizontally scrollable + Load More -->
   <section class="section">
     <h2>Recommended Movies</h2>
     <div class="movie-carousel" id="recommended-carousel"></div>
+    <button class="load-more-btn" id="recommended-more">Load More</button>
   </section>
 
   <section class="section">
     <h2>Popular in Action</h2>
     <div class="movie-carousel" id="action-carousel"></div>
+    <button class="load-more-btn" id="action-more">Load More</button>
   </section>
 
   <section class="section">
     <h2>New Releases</h2>
     <div class="movie-carousel" id="new-carousel"></div>
+    <button class="load-more-btn" id="new-more">Load More</button>
   </section>
 
   <section class="section">
     <h2>Bollywood (Hindi)</h2>
     <div class="movie-carousel" id="bollywood-carousel"></div>
+    <button class="load-more-btn" id="bollywood-more">Load More</button>
   </section>
 
   <section class="section">
     <h2>Hollywood (English)</h2>
     <div class="movie-carousel" id="hollywood-carousel"></div>
+    <button class="load-more-btn" id="hollywood-more">Load More</button>
   </section>
 
   <section class="section">
     <h2>South (Telugu)</h2>
     <div class="movie-carousel" id="south-carousel"></div>
+    <button class="load-more-btn" id="south-more">Load More</button>
   </section>
 
   <section class="section">
     <h2>Punjabi</h2>
     <div class="movie-carousel" id="punjabi-carousel"></div>
+    <button class="load-more-btn" id="punjabi-more">Load More</button>
   </section>
 
   <section class="section">
     <h2>Anime (Japanese)</h2>
     <div class="movie-carousel" id="anime-carousel"></div>
+    <button class="load-more-btn" id="anime-more">Load More</button>
   </section>
 
   <section class="section">
     <h2>K-Drama (Korean)</h2>
     <div class="movie-carousel" id="kdrama-carousel"></div>
+    <button class="load-more-btn" id="kdrama-more">Load More</button>
   </section>
 
   <section class="section">
     <h2>Chinese Drama (Mandarin)</h2>
     <div class="movie-carousel" id="chinese-carousel"></div>
+    <button class="load-more-btn" id="chinese-more">Load More</button>
   </section>
 
   <!-- Footer -->
@@ -221,12 +333,22 @@
     <p>Additional Links or Info</p>
   </footer>
 
+  <!-- Search Overlay -->
+  <div id="searchOverlay">
+    <button class="search-close-btn" id="searchCloseBtn">Close</button>
+    <div class="search-input-container">
+      <input type="text" id="searchInput" placeholder="Type movie name..." />
+      <button id="searchGoBtn">Search</button>
+    </div>
+    <div id="searchResults"></div>
+  </div>
+
   <script>
     const apiKey = 'af1f708691a1a8fa6862a85e2cc240ea';
     const imageBaseUrl = 'https://image.tmdb.org/t/p/w500';
     const fallbackImage = 'https://via.placeholder.com/500x750?text=No+Image';
 
-    // 1) TOP SLIDESHOW (Hindi Movies)
+    /* ------------- TOP SLIDESHOW (Hindi Movies) ------------- */
     let topSlides = [];
     let currentSlideIndex = 0;
 
@@ -278,14 +400,28 @@
       topMovieTitleEl.textContent = movie ? (movie.title || 'No Title') : '';
     }
 
-    // 2) LOAD CATEGORY CAROUSELS
-    async function loadCategory(url, containerId) {
+    /* ------------- ENDLESS CATEGORIES (LOAD MORE) ------------- */
+    const categoryPages = {
+      recommended: 1,
+      action: 1,
+      new: 1,
+      bollywood: 1,
+      hollywood: 1,
+      south: 1,
+      punjabi: 1,
+      anime: 1,
+      kdrama: 1,
+      chinese: 1,
+    };
+
+    async function loadCategory(pageKey, url, containerId) {
       try {
-        const response = await fetch(url);
+        const response = await fetch(url + '&page=' + categoryPages[pageKey]);
         const data = await response.json();
         const results = data.results || [];
         const container = document.getElementById(containerId);
-        results.slice(0, 12).forEach(movie => {
+
+        results.forEach(movie => {
           const item = document.createElement('div');
           item.className = 'movie-item';
           const img = document.createElement('img');
@@ -297,57 +433,140 @@
           container.appendChild(item);
         });
       } catch (error) {
-        console.error(`Error loading category for ${containerId}:`, error);
+        console.error(`Error loading category for ${pageKey}:`, error);
       }
     }
 
     function loadRecommendedMovies() {
+      const pageKey = 'recommended';
       const url = `https://api.themoviedb.org/3/movie/top_rated?api_key=${apiKey}`;
-      loadCategory(url, 'recommended-carousel');
+      loadCategory(pageKey, url, 'recommended-carousel');
+      categoryPages[pageKey]++;
     }
     function loadActionMovies() {
+      const pageKey = 'action';
       const url = `https://api.themoviedb.org/3/discover/movie?with_genres=28&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCategory(url, 'action-carousel');
+      loadCategory(pageKey, url, 'action-carousel');
+      categoryPages[pageKey]++;
     }
     function loadNewReleases() {
+      const pageKey = 'new';
       const url = `https://api.themoviedb.org/3/movie/now_playing?api_key=${apiKey}`;
-      loadCategory(url, 'new-carousel');
+      loadCategory(pageKey, url, 'new-carousel');
+      categoryPages[pageKey]++;
     }
     function loadBollywood() {
+      const pageKey = 'bollywood';
       const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=hi&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCategory(url, 'bollywood-carousel');
+      loadCategory(pageKey, url, 'bollywood-carousel');
+      categoryPages[pageKey]++;
     }
     function loadHollywood() {
+      const pageKey = 'hollywood';
       const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=en&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCategory(url, 'hollywood-carousel');
+      loadCategory(pageKey, url, 'hollywood-carousel');
+      categoryPages[pageKey]++;
     }
     function loadSouth() {
+      const pageKey = 'south';
       const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=te&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCategory(url, 'south-carousel');
+      loadCategory(pageKey, url, 'south-carousel');
+      categoryPages[pageKey]++;
     }
     function loadPunjabi() {
+      const pageKey = 'punjabi';
       const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=pa&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCategory(url, 'punjabi-carousel');
+      loadCategory(pageKey, url, 'punjabi-carousel');
+      categoryPages[pageKey]++;
     }
     function loadAnime() {
+      const pageKey = 'anime';
       const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=ja&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCategory(url, 'anime-carousel');
+      loadCategory(pageKey, url, 'anime-carousel');
+      categoryPages[pageKey]++;
     }
     function loadKdrama() {
+      const pageKey = 'kdrama';
       const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=ko&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCategory(url, 'kdrama-carousel');
+      loadCategory(pageKey, url, 'kdrama-carousel');
+      categoryPages[pageKey]++;
     }
     function loadChinese() {
+      const pageKey = 'chinese';
       const url = `https://api.themoviedb.org/3/discover/movie?with_original_language=zh&sort_by=popularity.desc&api_key=${apiKey}`;
-      loadCategory(url, 'chinese-carousel');
+      loadCategory(pageKey, url, 'chinese-carousel');
+      categoryPages[pageKey]++;
     }
 
-    // Init
+    /* ------------- SEARCH OVERLAY ------------- */
+    const searchOverlay = document.getElementById('searchOverlay');
+    const searchIcon = document.getElementById('searchIcon');
+    const searchCloseBtn = document.getElementById('searchCloseBtn');
+    const searchInput = document.getElementById('searchInput');
+    const searchGoBtn = document.getElementById('searchGoBtn');
+    const searchResults = document.getElementById('searchResults');
+
+    // Show overlay & load trending movies initially
+    async function openSearchOverlay() {
+      searchOverlay.style.display = 'flex';
+      searchInput.value = ''; // clear any old query
+      searchResults.innerHTML = '';
+      await loadTrendingInSearch();
+    }
+
+    // Hide overlay
+    function closeSearchOverlay() {
+      searchOverlay.style.display = 'none';
+    }
+
+    // Load trending movies if no search query
+    async function loadTrendingInSearch() {
+      const url = `https://api.themoviedb.org/3/trending/movie/day?api_key=${apiKey}`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const results = data.results || [];
+        renderSearchResults(results);
+      } catch (error) {
+        console.error('Error loading trending for search:', error);
+      }
+    }
+
+    // Perform a search
+    async function searchMovies(query) {
+      const url = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const results = data.results || [];
+        renderSearchResults(results);
+      } catch (error) {
+        console.error('Error searching movies:', error);
+      }
+    }
+
+    function renderSearchResults(results) {
+      searchResults.innerHTML = '';
+      results.forEach(movie => {
+        const div = document.createElement('div');
+        div.className = 'search-item';
+        const img = document.createElement('img');
+        img.src = movie.poster_path ? (imageBaseUrl + movie.poster_path) : fallbackImage;
+        const title = document.createElement('div');
+        title.className = 'search-item-title';
+        title.textContent = movie.title || 'No Title';
+        div.appendChild(img);
+        div.appendChild(title);
+        searchResults.appendChild(div);
+      });
+    }
+
+    // Event Listeners
     document.addEventListener('DOMContentLoaded', () => {
       // Top Slideshow
       loadTopSlideshow();
 
-      // Categories
+      // Initial load for categories
       loadRecommendedMovies();
       loadActionMovies();
       loadNewReleases();
@@ -359,9 +578,39 @@
       loadKdrama();
       loadChinese();
 
-      // Search icon click
-      document.getElementById('searchIcon').addEventListener('click', () => {
-        alert('Search functionality to be implemented.');
+      // Load More buttons
+      document.getElementById('recommended-more').addEventListener('click', loadRecommendedMovies);
+      document.getElementById('action-more').addEventListener('click', loadActionMovies);
+      document.getElementById('new-more').addEventListener('click', loadNewReleases);
+      document.getElementById('bollywood-more').addEventListener('click', loadBollywood);
+      document.getElementById('hollywood-more').addEventListener('click', loadHollywood);
+      document.getElementById('south-more').addEventListener('click', loadSouth);
+      document.getElementById('punjabi-more').addEventListener('click', loadPunjabi);
+      document.getElementById('anime-more').addEventListener('click', loadAnime);
+      document.getElementById('kdrama-more').addEventListener('click', loadKdrama);
+      document.getElementById('chinese-more').addEventListener('click', loadChinese);
+
+      // Search overlay open/close
+      searchIcon.addEventListener('click', openSearchOverlay);
+      searchCloseBtn.addEventListener('click', closeSearchOverlay);
+
+      // On "Search" button
+      searchGoBtn.addEventListener('click', () => {
+        const query = searchInput.value.trim();
+        if (query) {
+          searchMovies(query);
+        } else {
+          // if empty, show trending
+          loadTrendingInSearch();
+        }
+      });
+
+      // On pressing Enter in the input
+      searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          searchGoBtn.click();
+        }
       });
     });
   </script>
